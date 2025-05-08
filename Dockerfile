@@ -1,5 +1,5 @@
 # Use the official dart docker image as our build image.
-FROM cirrusci/flutter:3.16.4
+FROM dart:stable as build
 
 # Activate the jaspr cli.
 RUN dart pub global activate jaspr_cli
