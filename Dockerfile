@@ -1,20 +1,30 @@
-# Use Flutter with Web enabled
+# Use the official dart docker image as our build image.
 FROM cirrusci/flutter:3.16.4
 
-# Set working directory
-WORKDIR /app
+# Activate the jaspr cli.
+RUN dart pub global activate jaspr_cli
 
-# Copy project files
+WORKDIR /app
+# Copy all files into the current image.
 COPY . .
 
-# Enable web (just in case)
-RUN flutter config --enable-web
-
-# Get dependencies
+# Resolve app dependencies.
+RUN rm -f pubspec_overrides.yaml
 RUN dart pub get
 
-# Build for web using Jaspr
-RUN dart run jaspr build
+# Build project
+RUN dart pub global run jaspr_cli:jaspr build --verbose
 
-# Serve using dart CLI or your preferred method
-CMD ["dart", "run", "jaspr", "serve"]
+# Use a new empty docker image, this will be the final container image.
+FROM scratch
+
+# Copy all the needed runtime libraries for dart.
+COPY --from=build /runtime/ /
+# Copy the build outputs for your site.
+COPY --from=build /app/build/jaspr/ /app/
+
+WORKDIR /app
+
+# Start the server.
+EXPOSE 8080
+CMD ["./app"]
